@@ -29,7 +29,8 @@ data class PromoSlide(
     val title: String,
     val desc: String,
     val badge: String,
-    val gradient: List<Color>
+    val gradient: List<Color>,
+    val imageResId: Int? = null
 )
 
 @Composable
@@ -55,6 +56,19 @@ fun HomeScreen(
                 .padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.img_kulina_logo_1780500709785),
+                contentDescription = "Kulina Logo",
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .border(1.5.dp, KulinaYellow, CircleShape)
+                    .background(Color.White),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.width(10.dp))
+
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -253,6 +267,13 @@ fun HomeScreen(
             // SLIDING HERO PROMOTIONAL BANNER CAROUSEL
             val promoSlides = listOf(
                 PromoSlide(
+                    title = "Kenyalnya Juara!",
+                    desc = "Somay, Batagor, Ekado, Pempek 100% Ikan Pilihan asli Kulina.",
+                    badge = "NEW BRAND",
+                    gradient = emptyList(),
+                    imageResId = com.example.R.drawable.img_kulina_banner_wide_1780500732294
+                ),
+                PromoSlide(
                     title = "Kulina Premium Partnership",
                     desc = "Pasokan Bahan Baku Segar & Terjamin 100% langsung dari gudang pusat.",
                     badge = "OFFICIAL",
@@ -292,94 +313,121 @@ fun HomeScreen(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(130.dp),
+                        .height(130.dp)
+                        .clickable { viewModel.navigateTo(Screen.Promo) },
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.5.dp, KulinaBorder)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Brush.linearGradient(activeSlide.gradient))
-                    ) {
-                        // Background pattern overlay
-                        Image(
-                            painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.img_kln_banner_1780392758252),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .alpha(0.12f),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                        )
-
-                        // Visual decorative floating circles
-                        Box(
-                            modifier = Modifier
-                                .absoluteOffset(x = 240.dp, y = (-20).dp)
-                                .size(120.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.08f))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .absoluteOffset(x = 290.dp, y = 40.dp)
-                                .size(80.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.12f))
-                        )
-
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().statusBarsPadding(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                    if (activeSlide.imageResId != null) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            Image(
+                                painter = androidx.compose.ui.res.painterResource(id = activeSlide.imageResId),
+                                contentDescription = "Promo Banner Image",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                            // Transparent float overlay badge
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(Color.White.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
-                                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                                ) {
-                                    Text(
-                                        text = activeSlide.badge,
-                                        color = Color.White,
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Black
-                                    )
-                                }
-                                
-                                // Direct Navigation manual trigger
                                 Text(
-                                    text = "Detail Promo ➜",
+                                    text = activeSlide.badge,
                                     color = Color.White,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Black,
-                                    modifier = Modifier
-                                        .clickable { viewModel.navigateTo(Screen.Promo) }
-                                        .padding(4.dp)
-                                )
-                            }
-
-                            Column {
-                                Text(
-                                    text = activeSlide.title,
-                                    color = Color.White,
-                                    fontSize = 15.sp,
+                                    fontSize = 8.sp,
                                     fontWeight = FontWeight.Black
                                 )
-                                Text(
-                                    text = activeSlide.desc,
-                                    color = Color.White.copy(alpha = 0.9f),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    lineHeight = 12.sp,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.padding(top = 2.dp)
-                                )
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.linearGradient(activeSlide.gradient))
+                        ) {
+                            // Background pattern overlay
+                            Image(
+                                painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.img_kln_banner_1780392758252),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .alpha(0.12f),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+
+                            // Visual decorative floating circles
+                            Box(
+                                modifier = Modifier
+                                    .absoluteOffset(x = 240.dp, y = (-20).dp)
+                                    .size(120.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.08f))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .absoluteOffset(x = 290.dp, y = 40.dp)
+                                    .size(80.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.12f))
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().statusBarsPadding(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(Color.White.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                                    ) {
+                                        Text(
+                                            text = activeSlide.badge,
+                                            color = Color.White,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Black
+                                        )
+                                    }
+                                    
+                                    // Direct Navigation manual trigger
+                                    Text(
+                                        text = "Detail Promo ➜",
+                                        color = Color.White,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier
+                                            .clickable { viewModel.navigateTo(Screen.Promo) }
+                                            .padding(4.dp)
+                                    )
+                                }
+
+                                Column {
+                                    Text(
+                                        text = activeSlide.title,
+                                        color = Color.White,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                    Text(
+                                        text = activeSlide.desc,
+                                        color = Color.White.copy(alpha = 0.9f),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        lineHeight = 12.sp,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -576,7 +624,7 @@ fun HomeScreen(
                     )
                     MenuTile(
                         title = "Keuangan",
-                        icon = Icons.Default.Lock, // coin or log placeholder
+                        icon = Icons.Default.Lock, // secure finance lock/ledger
                         colorType = "yellow",
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.Finance) }
@@ -585,8 +633,8 @@ fun HomeScreen(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MenuTile(
-                        title = "CCTV",
-                        icon = Icons.Default.Share, // video placeholders
+                        title = "CCTV Live",
+                        icon = Icons.Default.PlayArrow, // play/stream video icon
                         colorType = "purple",
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.Cctv) }
@@ -600,14 +648,14 @@ fun HomeScreen(
                     )
                     MenuTile(
                         title = "Reward",
-                        icon = Icons.Default.Star, // trophy placeholder
+                        icon = Icons.Default.Star, // star reward placeholder
                         colorType = "yellow",
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.Reward) }
                     )
                     MenuTile(
                         title = "Support",
-                        icon = Icons.Default.Person, // support or user placeholder
+                        icon = Icons.Default.Person, // user support/account helper icon
                         colorType = "green",
                         modifier = Modifier.weight(1f),
                         onClick = { viewModel.navigateTo(Screen.Support) }
@@ -620,6 +668,7 @@ fun HomeScreen(
                         icon = Icons.Default.Settings,
                         colorType = "black", // Modern styling for admin entry
                         modifier = Modifier.fillMaxWidth(),
+                        isWide = true,
                         onClick = { viewModel.navigateTo(Screen.AdminDashboard) }
                     )
                 }
@@ -865,50 +914,108 @@ fun MenuTile(
     icon: ImageVector,
     colorType: String,
     modifier: Modifier = Modifier,
+    isWide: Boolean = false,
     onClick: () -> Unit
 ) {
-    val tintColor = when (colorType) {
-        "purple" -> KulinaPurple
-        "orange" -> KulinaOrange
-        "green" -> KulinaGreen
-        else -> Color(0xFFE6A800) // yellow representation
+    val backgroundBrush = when (colorType) {
+        "purple" -> Brush.verticalGradient(listOf(Color(0xFF8E2DE2), Color(0xFF4A00E0)))
+        "orange" -> Brush.verticalGradient(listOf(Color(0xFFFF416C), Color(0xFFFF4B2B)))
+        "green" -> Brush.verticalGradient(listOf(Color(0xFF11998E), Color(0xFF38EF7D)))
+        "yellow" -> Brush.verticalGradient(listOf(Color(0xFFF1C40F), Color(0xFFF39C12)))
+        "black" -> Brush.linearGradient(listOf(Color(0xFF141E30), Color(0xFF243B55)))
+        else -> Brush.verticalGradient(listOf(KulinaPurple, KulinaPurpleLight))
     }
 
     Card(
         modifier = modifier
-            .aspectRatio(1.1f)
+            .then(if (isWide) Modifier.fillMaxWidth().height(80.dp) else Modifier.aspectRatio(1.05f))
             .clickable(onClick = onClick)
             .testTag("menu_tile_${title.lowercase().replace(" ", "_")}"),
         colors = CardDefaults.cardColors(containerColor = KulinaCardBg),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.5.dp, KulinaBorder)
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, KulinaBorder)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 12.dp, horizontal = 4.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = tintColor,
+        if (isWide) {
+            Row(
                 modifier = Modifier
-                    .size(24.dp)
-                    .padding(bottom = 5.dp)
-            )
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(backgroundBrush),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
 
-            Text(
-                text = title,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Black,
-                color = KulinaText,
-                textAlign = TextAlign.Center,
-                lineHeight = 12.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Black,
+                        color = KulinaText
+                    )
+                    Text(
+                        text = "Kelola data mitra, ubah produk, pantau transaksi real-time",
+                        fontSize = 10.sp,
+                        color = KulinaTextMuted,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = KulinaTextMuted,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(backgroundBrush),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = title,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Black,
+                    color = KulinaText,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 13.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

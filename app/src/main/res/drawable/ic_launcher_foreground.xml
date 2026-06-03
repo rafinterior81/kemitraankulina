@@ -3,6 +3,6 @@
     <item
         android:width="66dp"
         android:height="66dp"
-        android:drawable="@drawable/partner_food_logo_1780366687980"
+        android:drawable="@drawable/img_kulina_logo_1780500709785"
         android:gravity="center" />
 </layer-list>

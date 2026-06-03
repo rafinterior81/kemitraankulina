@@ -720,6 +720,51 @@ class KulinaViewModel(private val repository: MitraRepository) : ViewModel() {
             }
         }
     }
+
+    fun addOrUpdateFaq(faq: FaqItem) {
+        val current = _faqs.value.toMutableList()
+        val index = current.indexOfFirst { it.id == faq.id }
+        if (index >= 0) {
+            current[index] = faq
+        } else {
+            current.add(0, faq)
+        }
+        _faqs.value = current
+    }
+
+    fun deleteFaq(faqId: String) {
+        _faqs.value = _faqs.value.filter { it.id != faqId }
+    }
+
+    fun addOrUpdateMeeting(meeting: PartnerMeeting) {
+        val current = _meetings.value.toMutableList()
+        val index = current.indexOfFirst { it.id == meeting.id }
+        if (index >= 0) {
+            current[index] = meeting
+        } else {
+            current.add(0, meeting)
+        }
+        _meetings.value = current
+    }
+
+    fun deleteMeeting(meetingId: String) {
+        _meetings.value = _meetings.value.filter { it.id != meetingId }
+    }
+
+    fun addOrUpdateCctv(cam: CctvCamera) {
+        val current = _cctvCameras.value.toMutableList()
+        val index = current.indexOfFirst { it.id == cam.id }
+        if (index >= 0) {
+            current[index] = cam
+        } else {
+            current.add(0, cam)
+        }
+        _cctvCameras.value = current
+    }
+
+    fun deleteCctv(camId: Int) {
+        _cctvCameras.value = _cctvCameras.value.filter { it.id != camId }
+    }
 }
 
 class KulinaViewModelFactory(private val repository: MitraRepository) : ViewModelProvider.Factory {

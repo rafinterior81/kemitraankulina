@@ -1177,6 +1177,36 @@ fun TabButton(
 }
 
 @Composable
+fun AdminTabButton(
+    text: String,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (active) KulinaPurple.copy(alpha = 0.15f) else Color.Transparent)
+            .border(
+                width = if (active) 1.5.dp else 1.dp,
+                color = if (active) KulinaPurple else KulinaBorder,
+                shape = RoundedCornerShape(8.dp)
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = if (active) KulinaPurpleDark else KulinaText,
+            fontWeight = if (active) FontWeight.Black else FontWeight.Bold,
+            fontSize = 12.sp
+        )
+    }
+}
+
+@Composable
 fun OutletScreen(
     viewModel: KulinaViewModel,
     onBack: () -> Unit
@@ -4814,21 +4844,54 @@ fun AdminDashboardScreen(
     var passwordError by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Admin CRUD state
+    // Admin CRUD state for Product (Tab 0)
     var showForm by remember { mutableStateOf(false) }
     var editingProduct by remember { mutableStateOf<ProductEntity?>(null) }
-
-    // Form text fields
     var nameInput by remember { mutableStateOf("") }
     var unitInput by remember { mutableStateOf("") }
     var priceInput by remember { mutableStateOf("") }
     var stockInput by remember { mutableStateOf("100") }
     var thresholdInput by remember { mutableStateOf("15") }
-    var imageTypeSelect by remember { mutableStateOf("somay") } // "somay", "batagor", "pempek", "ingredients"
+    var imageTypeSelect by remember { mutableStateOf("somay") }
 
+    // Admin CRUD state for Meeting (Tab 2)
+    var showMeetingForm by remember { mutableStateOf(false) }
+    var editingMeeting by remember { mutableStateOf<PartnerMeeting?>(null) }
+    var meetingTitleInput by remember { mutableStateOf("") }
+    var meetingDayInput by remember { mutableStateOf("") }
+    var meetingMonthInput by remember { mutableStateOf("") }
+    var meetingTimeInput by remember { mutableStateOf("") }
+    var meetingPlatformInput by remember { mutableStateOf("Google Meet") }
+    var meetingUrlInput by remember { mutableStateOf("") }
+    var meetingParticipantsInput by remember { mutableStateOf("0") }
+    var meetingIsRegisteredInput by remember { mutableStateOf(false) }
+    var meetingIsPastInput by remember { mutableStateOf(false) }
+
+    // Admin CRUD state for FAQ (Tab 3)
+    var showFaqForm by remember { mutableStateOf(false) }
+    var editingFaq by remember { mutableStateOf<FaqItem?>(null) }
+    var faqQuestionInput by remember { mutableStateOf("") }
+    var faqAnswerInput by remember { mutableStateOf("") }
+    var faqCategorySelect by remember { mutableStateOf("Umum") }
+
+    // Admin CRUD state for CCTV (Tab 4)
+    var showCctvForm by remember { mutableStateOf(false) }
+    var editingCctv by remember { mutableStateOf<CctvCamera?>(null) }
+    var cctvNameInput by remember { mutableStateOf("") }
+    var cctvEmojiInput by remember { mutableStateOf("🏪") }
+    var cctvStatusSelect by remember { mutableStateOf("ONLINE") }
+    var cctvIpInput by remember { mutableStateOf("192.168.1.100") }
+    var cctvResolutionInput by remember { mutableStateOf("1080p FHD") }
+    var cctvFpsInput by remember { mutableStateOf("24") }
+
+    // Flow collections
     val products by viewModel.products.collectAsState()
     val incomingOrders by viewModel.orders.collectAsState()
-    var adminTab by remember { mutableStateOf(0) } // 0 = Katalog & Keuangan, 1 = Pesanan Masuk
+    val meetings by viewModel.meetings.collectAsState()
+    val faqs by viewModel.faqs.collectAsState()
+    val cctvCameras by viewModel.cctvCameras.collectAsState()
+
+    var adminTab by remember { mutableStateOf(0) } // 0 = Katalog & Keuangan, 1 = Pesanan Masuk, 2 = Pertemuan, 3 = FAQ, 4 = CCTV
 
     // Screen shell
     Column(
@@ -4975,27 +5038,50 @@ fun AdminDashboardScreen(
             // ADMIN MANAGEMENT SCREEN (AUTHENTICATED)
             Column(modifier = Modifier.fillMaxSize()) {
                 
-                // Beautiful Tab Toggles
+                // Beautiful Tab Toggles (Scrollable row)
                 val pendingCount = incomingOrders.filter { !it.isPaid || it.status != "Selesai" }.size
-                Row(
+                androidx.compose.foundation.lazy.LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.White)
-                        .padding(vertical = 8.dp, horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(vertical = 4.dp, horizontal = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    TabButton(
-                        text = "Katalog & Keuangan 📋",
-                        active = adminTab == 0,
-                        modifier = Modifier.weight(1f),
-                        onClick = { adminTab = 0 }
-                    )
-                    TabButton(
-                        text = "Pesanan Masuk ($pendingCount) 📥",
-                        active = adminTab == 1,
-                        modifier = Modifier.weight(1f),
-                        onClick = { adminTab = 1 }
-                    )
+                    item {
+                        AdminTabButton(
+                            text = "Katalog & Keuangan 📋",
+                            active = adminTab == 0,
+                            onClick = { adminTab = 0 }
+                        )
+                    }
+                    item {
+                        AdminTabButton(
+                            text = "Pesanan Masuk ($pendingCount) 📥",
+                            active = adminTab == 1,
+                            onClick = { adminTab = 1 }
+                        )
+                    }
+                    item {
+                        AdminTabButton(
+                            text = "Pertemuan 🎥",
+                            active = adminTab == 2,
+                            onClick = { adminTab = 2 }
+                        )
+                    }
+                    item {
+                        AdminTabButton(
+                            text = "Kelola FAQs ❔",
+                            active = adminTab == 3,
+                            onClick = { adminTab = 3 }
+                        )
+                    }
+                    item {
+                        AdminTabButton(
+                            text = "IoT CCTV 📡",
+                            active = adminTab == 4,
+                            onClick = { adminTab = 4 }
+                        )
+                    }
                 }
 
                 if (adminTab == 0) {
@@ -5526,8 +5612,8 @@ fun AdminDashboardScreen(
                     }
                 }
             }
-        } else {
-            // TAB 2: Pesanan Masuk (Incoming Orders)
+        } else if (adminTab == 1) {
+            // TAB 1: Pesanan Masuk (Incoming Orders)
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -5733,7 +5819,826 @@ fun AdminDashboardScreen(
                     }
                 }
             }
-        }
+        } else if (adminTab == 2) {
+            // TAB 2: PARTNER MEETINGS (CONFERENCES)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                if (showMeetingForm || editingMeeting != null) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.5.dp, KulinaPurpleLight),
+                        colors = CardDefaults.cardColors(containerColor = KulinaCardBg)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = if (editingMeeting == null) "Jadwalkan Pertemuan Baru 🎥" else "Ubah Jadwal Pertemuan ✏️",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Black,
+                                color = KulinaPurpleDark
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            OutlinedTextField(
+                                value = meetingTitleInput,
+                                onValueChange = { meetingTitleInput = it },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                label = { Text("Judul Pertemuan", fontSize = 11.sp) },
+                                singleLine = true
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = meetingDayInput,
+                                    onValueChange = { meetingDayInput = it },
+                                    modifier = Modifier.weight(1f),
+                                    label = { Text("Tanggal Hari (e.g. 05)", fontSize = 11.sp) },
+                                    singleLine = true
+                                )
+
+                                OutlinedTextField(
+                                    value = meetingMonthInput,
+                                    onValueChange = { meetingMonthInput = it },
+                                    modifier = Modifier.weight(1f),
+                                    label = { Text("Bulan (e.g. JUN)", fontSize = 11.sp) },
+                                    singleLine = true
+                                )
+                            }
+
+                            OutlinedTextField(
+                                value = meetingTimeInput,
+                                onValueChange = { meetingTimeInput = it },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                label = { Text("Waktu (e.g. 10:00 WIB • Google Meet)", fontSize = 11.sp) },
+                                singleLine = true
+                            )
+
+                            OutlinedTextField(
+                                value = meetingUrlInput,
+                                onValueChange = { meetingUrlInput = it },
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                label = { Text("Tautan Video Conference", fontSize = 11.sp) },
+                                singleLine = true
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Apakah Pertemuan Masa Lalu?", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = KulinaText)
+                                Spacer(modifier = Modifier.weight(1f))
+                                Switch(
+                                    checked = meetingIsPastInput,
+                                    onCheckedChange = { meetingIsPastInput = it },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = KulinaPurple)
+                                )
+                            }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                showMeetingForm = false
+                                                editingMeeting = null
+                                                meetingTitleInput = ""
+                                                meetingDayInput = ""
+                                                meetingMonthInput = ""
+                                                meetingTimeInput = ""
+                                                meetingUrlInput = ""
+                                                meetingIsPastInput = false
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text("Batal", fontSize = 12.sp, color = KulinaPurple, fontWeight = FontWeight.Bold)
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                if (meetingTitleInput.trim().isNotEmpty()) {
+                                                    val savedMeeting = editingMeeting?.copy(
+                                                        title = meetingTitleInput.trim(),
+                                                        day = meetingDayInput.trim(),
+                                                        month = meetingMonthInput.trim().uppercase(),
+                                                        timeInfo = meetingTimeInput.trim(),
+                                                        meetUrl = meetingUrlInput.trim().ifEmpty { "https://meet.google.com/abc-def-ghi" },
+                                                        isPast = meetingIsPastInput
+                                                    ) ?: PartnerMeeting(
+                                                        id = "meet_" + System.currentTimeMillis(),
+                                                        title = meetingTitleInput.trim(),
+                                                        day = meetingDayInput.trim().ifEmpty { "12" },
+                                                        month = meetingMonthInput.trim().uppercase().ifEmpty { "JUN" },
+                                                        timeInfo = meetingTimeInput.trim().ifEmpty { "09:00 WIB • Google Meet" },
+                                                        meetUrl = meetingUrlInput.trim().ifEmpty { "https://meet.google.com/abc-def-ghi" },
+                                                        isRegistered = false,
+                                                        isPast = meetingIsPastInput
+                                                    )
+                                                    
+                                                    viewModel.addOrUpdateMeeting(savedMeeting)
+                                                    android.widget.Toast.makeText(context, "Pertemuan disimpan!", android.widget.Toast.LENGTH_SHORT).show()
+
+                                                    showMeetingForm = false
+                                                    editingMeeting = null
+                                                    meetingTitleInput = ""
+                                                    meetingDayInput = ""
+                                                    meetingMonthInput = ""
+                                                    meetingTimeInput = ""
+                                                    meetingUrlInput = ""
+                                                    meetingIsPastInput = false
+                                                } else {
+                                                    android.widget.Toast.makeText(context, "Judul wajib diisi!", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1.5f),
+                                            colors = ButtonDefaults.buttonColors(containerColor = KulinaPurple),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(text = "Simpan", fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Jadwal Briefing & Evaluasi 🎥",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = KulinaPurpleDark
+                                )
+                                Text(
+                                    text = "Konfigurasi link seminar / webinar koordinasi operasional.",
+                                    fontSize = 11.sp,
+                                    color = KulinaTextMuted,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (!showMeetingForm && editingMeeting == null) {
+                                Button(
+                                    onClick = {
+                                        showMeetingForm = true
+                                        editingMeeting = null
+                                        meetingTitleInput = ""
+                                        meetingDayInput = ""
+                                        meetingMonthInput = ""
+                                        meetingTimeInput = ""
+                                        meetingUrlInput = ""
+                                        meetingIsPastInput = false
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = KulinaOrange),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("Tambah", fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                }
+                            }
+                        }
+
+                        if (meetings.isEmpty()) {
+                            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Text("Tidak ada pertemuan tersedia.", color = KulinaTextMuted, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(meetings.size) { index ->
+                                    val meet = meetings[index]
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(containerColor = KulinaCardBg),
+                                        shape = RoundedCornerShape(14.dp),
+                                        border = BorderStroke(1.dp, KulinaBorder)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .size(60.dp)
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(KulinaPurple.copy(alpha = 0.12f)),
+                                                verticalArrangement = Arrangement.Center,
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(text = meet.day, fontSize = 16.sp, fontWeight = FontWeight.Black, color = KulinaPurpleDark)
+                                                Text(text = meet.month, fontSize = 9.sp, fontWeight = FontWeight.Black, color = KulinaPurple)
+                                            }
+
+                                            Spacer(modifier = Modifier.width(10.dp))
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(text = meet.title, fontSize = 13.sp, fontWeight = FontWeight.Black, color = KulinaText)
+                                                Text(text = meet.timeInfo, fontSize = 10.sp, color = KulinaTextMuted, fontWeight = FontWeight.Bold)
+                                                
+                                                if (meet.isPast) {
+                                                    Text(text = "Pertemuan Berakhir", fontSize = 9.sp, color = KulinaRed, fontWeight = FontWeight.Black)
+                                                } else {
+                                                    Text(text = "Aktif • " + meet.platform, fontSize = 9.sp, color = KulinaGreen, fontWeight = FontWeight.Black)
+                                                }
+                                            }
+
+                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                IconButton(
+                                                    onClick = {
+                                                        editingMeeting = meet
+                                                        showMeetingForm = false
+                                                        meetingTitleInput = meet.title
+                                                        meetingDayInput = meet.day
+                                                        meetingMonthInput = meet.month
+                                                        meetingTimeInput = meet.timeInfo
+                                                        meetingUrlInput = meet.meetUrl
+                                                        meetingIsPastInput = meet.isPast
+                                                    }
+                                                ) {
+                                                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = KulinaText)
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        viewModel.deleteMeeting(meet.id)
+                                                        android.widget.Toast.makeText(context, "Pertemuan dihapus!", android.widget.Toast.LENGTH_SHORT).show()
+                                                    }
+                                                ) {
+                                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = KulinaRed)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (adminTab == 3) {
+                    // TAB 3: FAQ KEMITRAAN
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        if (showFaqForm || editingFaq != null) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(1.5.dp, KulinaPurpleLight),
+                                colors = CardDefaults.cardColors(containerColor = KulinaCardBg)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = if (editingFaq == null) "Tambah FAQ Baru ❔" else "Ubah FAQ ✏️",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = KulinaPurpleDark
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    OutlinedTextField(
+                                        value = faqQuestionInput,
+                                        onValueChange = { faqQuestionInput = it },
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        label = { Text("Pertanyaan (Question)", fontSize = 11.sp) },
+                                        singleLine = false
+                                    )
+
+                                    OutlinedTextField(
+                                        value = faqAnswerInput,
+                                        onValueChange = { faqAnswerInput = it },
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        label = { Text("Jawaban (Answer)", fontSize = 11.sp) },
+                                        singleLine = false
+                                    )
+
+                                    Text(
+                                        text = "Kategori Bantuan:",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        val categories = listOf("Umum", "Bahan Baku", "Kemitraan", "CCTV")
+                                        categories.forEach { cat ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(if (faqCategorySelect == cat) KulinaPurple.copy(alpha = 0.15f) else KulinaBg)
+                                                    .border(
+                                                        width = if (faqCategorySelect == cat) 1.5.dp else 1.dp,
+                                                        color = if (faqCategorySelect == cat) KulinaPurple else KulinaBorder,
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                    .clickable { faqCategorySelect = cat }
+                                                    .padding(vertical = 8.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(text = cat, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (faqCategorySelect == cat) KulinaPurpleDark else KulinaText)
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                showFaqForm = false
+                                                editingFaq = null
+                                                faqQuestionInput = ""
+                                                faqAnswerInput = ""
+                                                faqCategorySelect = "Umum"
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text("Batal", fontSize = 12.sp, color = KulinaPurple, fontWeight = FontWeight.Bold)
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                if (faqQuestionInput.trim().isNotEmpty() && faqAnswerInput.trim().isNotEmpty()) {
+                                                    val savedFaq = editingFaq?.copy(
+                                                        question = faqQuestionInput.trim(),
+                                                        answer = faqAnswerInput.trim(),
+                                                        category = faqCategorySelect
+                                                    ) ?: FaqItem(
+                                                        id = java.util.UUID.randomUUID().toString(),
+                                                        question = faqQuestionInput.trim(),
+                                                        answer = faqAnswerInput.trim(),
+                                                        category = faqCategorySelect
+                                                    )
+                                                    
+                                                    viewModel.addOrUpdateFaq(savedFaq)
+                                                    android.widget.Toast.makeText(context, "FAQ berhasil disimpan!", android.widget.Toast.LENGTH_SHORT).show()
+
+                                                    showFaqForm = false
+                                                    editingFaq = null
+                                                    faqQuestionInput = ""
+                                                    faqAnswerInput = ""
+                                                    faqCategorySelect = "Umum"
+                                                } else {
+                                                    android.widget.Toast.makeText(context, "Pertanyaan & jawaban wajib diisi!", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1.5f),
+                                            colors = ButtonDefaults.buttonColors(containerColor = KulinaPurple),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(text = "Simpan", fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Manajemen Panduan FAQ Bantuan ❔",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = KulinaPurpleDark
+                                )
+                                Text(
+                                    text = "Ubah panduan atau naskah solusi bantuan mandiri mitra.",
+                                    fontSize = 11.sp,
+                                    color = KulinaTextMuted,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (!showFaqForm && editingFaq == null) {
+                                Button(
+                                    onClick = {
+                                        showFaqForm = true
+                                        editingFaq = null
+                                        faqQuestionInput = ""
+                                        faqAnswerInput = ""
+                                        faqCategorySelect = "Umum"
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = KulinaOrange),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("Tambah", fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                }
+                            }
+                        }
+
+                        if (faqs.isEmpty()) {
+                            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Text("Panduan FAQ kosong.", color = KulinaTextMuted, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(faqs.size) { index ->
+                                    val faq = faqs[index]
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(containerColor = KulinaCardBg),
+                                        shape = RoundedCornerShape(14.dp),
+                                        border = BorderStroke(1.5.dp, KulinaBorder)
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(6.dp))
+                                                        .background(KulinaPurple.copy(alpha = 0.12f))
+                                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(text = faq.category, fontSize = 9.sp, fontWeight = FontWeight.Black, color = KulinaPurpleDark)
+                                                }
+
+                                                Spacer(modifier = Modifier.weight(1f))
+
+                                                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                    IconButton(
+                                                        onClick = {
+                                                            editingFaq = faq
+                                                            showFaqForm = false
+                                                            faqQuestionInput = faq.question
+                                                            faqAnswerInput = faq.answer
+                                                            faqCategorySelect = faq.category
+                                                        },
+                                                        modifier = Modifier.size(30.dp)
+                                                    ) {
+                                                        Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = KulinaText, modifier = Modifier.size(16.dp))
+                                                    }
+                                                    IconButton(
+                                                        onClick = {
+                                                            viewModel.deleteFaq(faq.id)
+                                                            android.widget.Toast.makeText(context, "FAQ dihapus!", android.widget.Toast.LENGTH_SHORT).show()
+                                                        },
+                                                        modifier = Modifier.size(30.dp)
+                                                    ) {
+                                                        Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = KulinaRed, modifier = Modifier.size(16.dp))
+                                                    }
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(text = "Q: " + faq.question, fontSize = 12.sp, fontWeight = FontWeight.Black, color = KulinaText)
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(text = "A: " + faq.answer, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = KulinaTextMuted)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else if (adminTab == 4) {
+                    // TAB 4: IoT CCTV CAMERA MANAGERS
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        if (showCctvForm || editingCctv != null) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 16.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                border = BorderStroke(1.5.dp, KulinaPurpleLight),
+                                colors = CardDefaults.cardColors(containerColor = KulinaCardBg)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = if (editingCctv == null) "Daftarkan NVR CCTV Baru 📡" else "Ubah Kamera CCTV ✏️",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = KulinaPurpleDark
+                                    )
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    OutlinedTextField(
+                                        value = cctvNameInput,
+                                        onValueChange = { cctvNameInput = it },
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        label = { Text("Nama Kamera / Ruang", fontSize = 11.sp) },
+                                        singleLine = true
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = cctvIpInput,
+                                            onValueChange = { cctvIpInput = it },
+                                            modifier = Modifier.weight(1.5f),
+                                            label = { Text("IP Address Kamera RTSP", fontSize = 11.sp) },
+                                            singleLine = true
+                                        )
+
+                                        OutlinedTextField(
+                                            value = cctvEmojiInput,
+                                            onValueChange = { cctvEmojiInput = it },
+                                            modifier = Modifier.weight(1f),
+                                            label = { Text("Emoji Icon", fontSize = 11.sp) },
+                                            singleLine = true
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedTextField(
+                                            value = cctvResolutionInput,
+                                            onValueChange = { cctvResolutionInput = it },
+                                            modifier = Modifier.weight(1f),
+                                            label = { Text("Resolusi (e.g. 1080p FHD)", fontSize = 11.sp) },
+                                            singleLine = true
+                                        )
+
+                                        OutlinedTextField(
+                                            value = cctvFpsInput,
+                                            onValueChange = { cctvFpsInput = it },
+                                            modifier = Modifier.weight(1f),
+                                            label = { Text("Frame Rate (FPS)", fontSize = 11.sp) },
+                                            singleLine = true
+                                        )
+                                    }
+
+                                    Text(
+                                        text = "Status Aliran Video:",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Black,
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        listOf("ONLINE", "BUFFERING", "OFFLINE").forEach { st ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(if (cctvStatusSelect == st) KulinaPurple.copy(alpha = 0.15f) else KulinaBg)
+                                                    .border(
+                                                        width = if (cctvStatusSelect == st) 1.5.dp else 1.dp,
+                                                        color = if (cctvStatusSelect == st) KulinaPurple else KulinaBorder,
+                                                        shape = RoundedCornerShape(8.dp)
+                                                    )
+                                                    .clickable { cctvStatusSelect = st }
+                                                    .padding(vertical = 8.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(text = st, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = if (cctvStatusSelect == st) KulinaPurpleDark else KulinaText)
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                showCctvForm = false
+                                                editingCctv = null
+                                                cctvNameInput = ""
+                                                cctvEmojiInput = "🏪"
+                                                cctvStatusSelect = "ONLINE"
+                                                cctvIpInput = "192.168.1.100"
+                                                cctvResolutionInput = "1080p FHD"
+                                                cctvFpsInput = "24"
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text("Batal", fontSize = 12.sp, color = KulinaPurple, fontWeight = FontWeight.Bold)
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                if (cctvNameInput.trim().isNotEmpty()) {
+                                                    val savedCctv = editingCctv?.copy(
+                                                        name = cctvNameInput.trim(),
+                                                        emoji = cctvEmojiInput.trim(),
+                                                        status = cctvStatusSelect,
+                                                        ipAddress = cctvIpInput.trim(),
+                                                        resolution = cctvResolutionInput.trim(),
+                                                        activeFps = cctvFpsInput.toIntOrNull() ?: 24
+                                                    ) ?: CctvCamera(
+                                                        id = (cctvCameras.maxOfOrNull { it.id } ?: 0) + 1,
+                                                        name = cctvNameInput.trim(),
+                                                        emoji = cctvEmojiInput.trim().ifEmpty { "🏪" },
+                                                        status = cctvStatusSelect,
+                                                        ipAddress = cctvIpInput.trim().ifEmpty { "192.168.1.100" },
+                                                        resolution = cctvResolutionInput.trim().ifEmpty { "1080p FHD" },
+                                                        activeFps = cctvFpsInput.toIntOrNull() ?: 24
+                                                    )
+                                                    
+                                                    viewModel.addOrUpdateCctv(savedCctv)
+                                                    android.widget.Toast.makeText(context, "Kamera CCTV dikonfigurasi!", android.widget.Toast.LENGTH_SHORT).show()
+
+                                                    showCctvForm = false
+                                                    editingCctv = null
+                                                    cctvNameInput = ""
+                                                    cctvEmojiInput = "🏪"
+                                                    cctvStatusSelect = "ONLINE"
+                                                    cctvIpInput = "192.168.1.100"
+                                                    cctvResolutionInput = "1080p FHD"
+                                                    cctvFpsInput = "24"
+                                                } else {
+                                                    android.widget.Toast.makeText(context, "Nama kamera wajib diisi!", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1.5f),
+                                            colors = ButtonDefaults.buttonColors(containerColor = KulinaPurple),
+                                            shape = RoundedCornerShape(8.dp)
+                                        ) {
+                                            Text(text = "Simpan", fontSize = 12.sp, fontWeight = FontWeight.Black)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Kelola Endpoint IP CCTV IoT 📡",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = KulinaPurpleDark
+                                )
+                                Text(
+                                    text = "Tambah atau sesuaikan feed video pengawasan langsung outlet mitra.",
+                                    fontSize = 11.sp,
+                                    color = KulinaTextMuted,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (!showCctvForm && editingCctv == null) {
+                                Button(
+                                    onClick = {
+                                        showCctvForm = true
+                                        editingCctv = null
+                                        cctvNameInput = ""
+                                        cctvEmojiInput = "🏪"
+                                        cctvStatusSelect = "ONLINE"
+                                        cctvIpInput = "192.168.1.100"
+                                        cctvResolutionInput = "1080p FHD"
+                                        cctvFpsInput = "24"
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = KulinaOrange),
+                                    shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Text("Tambah", fontSize = 11.sp, fontWeight = FontWeight.Black)
+                                }
+                            }
+                        }
+
+                        if (cctvCameras.isEmpty()) {
+                            Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Text("Feed CCTV Kosong.", color = KulinaTextMuted, fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(cctvCameras.size) { index ->
+                                    val cam = cctvCameras[index]
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(containerColor = KulinaCardBg),
+                                        shape = RoundedCornerShape(14.dp),
+                                        border = BorderStroke(1.5.dp, KulinaBorder)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(44.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(KulinaBorder),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(text = cam.emoji, fontSize = 20.sp)
+                                            }
+
+                                            Spacer(modifier = Modifier.width(10.dp))
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(text = cam.name, fontSize = 12.sp, fontWeight = FontWeight.Black, color = KulinaText)
+                                                Text(text = cam.ipAddress, fontSize = 10.sp, color = KulinaTextMuted, fontWeight = FontWeight.Bold)
+                                                
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    modifier = Modifier.padding(top = 2.dp)
+                                                ) {
+                                                    val badgeBg = when (cam.status) {
+                                                        "ONLINE" -> KulinaGreen.copy(alpha = 0.15f)
+                                                        "BUFFERING" -> KulinaOrange.copy(alpha = 0.15f)
+                                                        else -> KulinaRed.copy(alpha = 0.15f)
+                                                    }
+                                                    val badgeText = when (cam.status) {
+                                                        "ONLINE" -> KulinaGreen
+                                                        "BUFFERING" -> KulinaOrange
+                                                        else -> KulinaRed
+                                                    }
+
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(4.dp))
+                                                            .background(badgeBg)
+                                                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                                                    ) {
+                                                        Text(text = cam.status, fontSize = 8.sp, fontWeight = FontWeight.Black, color = badgeText)
+                                                    }
+
+                                                    Text(text = "${cam.resolution} | FPS: ${cam.activeFps}", fontSize = 9.sp, color = KulinaTextMuted, fontWeight = FontWeight.Bold)
+                                                }
+                                            }
+
+                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                IconButton(
+                                                    onClick = {
+                                                        editingCctv = cam
+                                                        showCctvForm = false
+                                                        cctvNameInput = cam.name
+                                                        cctvEmojiInput = cam.emoji
+                                                        cctvStatusSelect = cam.status
+                                                        cctvIpInput = cam.ipAddress
+                                                        cctvResolutionInput = cam.resolution
+                                                        cctvFpsInput = cam.activeFps.toString()
+                                                    }
+                                                ) {
+                                                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = KulinaText)
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        viewModel.deleteCctv(cam.id)
+                                                        android.widget.Toast.makeText(context, "Kamera feed dihapus!", android.widget.Toast.LENGTH_SHORT).show()
+                                                    }
+                                                ) {
+                                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = KulinaRed)
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
     }
 }
     }
@@ -6588,18 +7493,16 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Logo / Branding Header
-            Box(
+            Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.example.R.drawable.img_kulina_logo_1780500709785),
+                contentDescription = "Kulina Logo",
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(90.dp)
                     .clip(CircleShape)
-                    .background(KulinaPurple),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "🏬",
-                    fontSize = 42.sp
-                )
-            }
+                    .border(2.dp, KulinaYellow, CircleShape)
+                    .background(Color.White),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
