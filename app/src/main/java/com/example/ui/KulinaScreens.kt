@@ -1411,6 +1411,14 @@ fun FinanceScreen(
     val txns by viewModel.transactions.collectAsState()
     val userSession by viewModel.userSession.collectAsState()
 
+    val posApiKey by viewModel.posApiKey.collectAsState()
+    val webhookUrl by viewModel.webhookUrl.collectAsState()
+    val webhookRegistered by viewModel.webhookRegistered.collectAsState()
+    val isWebhookRegistering by viewModel.isWebhookRegistering.collectAsState()
+    val posSyncLogs by viewModel.posSyncLogs.collectAsState()
+    val cloudPosOmzet by viewModel.cloudPosOmzet.collectAsState()
+    val isPosSyncing by viewModel.isPosSyncing.collectAsState()
+
     val assignedOutlet = userSession?.outletName ?: "Semua"
     val isMitra = userSession?.role == "MITRA"
 
@@ -1472,14 +1480,34 @@ fun FinanceScreen(
                     .padding(18.dp)
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (isMitra) "Total Omset Hari Ini (Outlet $assignedOutlet)" else "Total Omset Hari Ini (Seluruh Outlet)",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.75f),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        if (cloudPosOmzet > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .background(KulinaYellow.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "+ Cloud POS Live",
+                                    color = KulinaYellow,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                     Text(
-                        text = if (isMitra) "Total Omset Hari Ini (Outlet $assignedOutlet)" else "Total Omset Hari Ini (Seluruh Outlet)",
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.75f),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = "Rp " + String.format("%,d", (if (isMitra) 1450000 else 4180000) + earnedToday).replace(',', '.'),
+                        text = "Rp " + String.format("%,d", ((if (isMitra) 1450000 else 4180000) + earnedToday + cloudPosOmzet.toLong())).replace(',', '.'),
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Black,
                         color = KulinaYellow,
@@ -1803,6 +1831,274 @@ fun FinanceScreen(
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // CLOUD POS INTEGRATION CARD & REAL-TIME DEVELOPER PLAYGROUND
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(16.dp))
+                    .testTag("pos_cloud_integration_card"),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, KulinaBorder)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    // Header Card
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(KulinaPurple.copy(alpha = 0.1f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    tint = KulinaPurple,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Integrasi Cloud POS",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = KulinaPurpleDark
+                                )
+                                Text(
+                                    text = "Sinkronisasi Webhook & Keamanan API",
+                                    fontSize = 10.sp,
+                                    color = KulinaTextMuted,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        // Connected badge
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    if (webhookRegistered) Color(0xFFE8F8F0) else Color(0xFFFFF0F0),
+                                    RoundedCornerShape(6.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .background(
+                                            if (webhookRegistered) Color(0xFF2ECC71) else Color(0xFFE74C3C),
+                                            CircleShape
+                                        )
+                                )
+                                Text(
+                                    text = if (webhookRegistered) "TERKONEKSI" else "OFFLINE",
+                                    fontSize = 8.5.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = if (webhookRegistered) KulinaGreen else KulinaRed
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // API Key Form
+                    Text(
+                        text = "Mitra API Secret Key (Token Keamanan)",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KulinaText
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    OutlinedTextField(
+                        value = posApiKey,
+                        onValueChange = { viewModel.updatePosApiKey(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("pos_api_key_input"),
+                        leadingIcon = {
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = KulinaPurple, modifier = Modifier.size(16.dp))
+                        },
+                        placeholder = { Text("Masukkan API Secret Key Mitra...", fontSize = 11.sp) },
+                        singleLine = true,
+                        textStyle = TextStyle(fontSize = 12.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = KulinaPurple,
+                            unfocusedBorderColor = KulinaBorder
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Webhook URL Form
+                    Text(
+                        text = "Endpoint Webhook POS (Penyedia POS Cloud)",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = KulinaText
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = webhookUrl,
+                            onValueChange = { viewModel.updateWebhookUrl(it) },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("webhook_url_input"),
+                            leadingIcon = {
+                                Icon(Icons.Default.Build, contentDescription = null, tint = KulinaPurple, modifier = Modifier.size(16.dp))
+                            },
+                            placeholder = { Text("https://api.kulina.com/webhook/pos-update", fontSize = 11.sp) },
+                            singleLine = true,
+                            textStyle = TextStyle(fontSize = 11.sp, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = KulinaPurple,
+                                unfocusedBorderColor = KulinaBorder
+                            )
+                        )
+
+                        Button(
+                            onClick = {
+                                viewModel.registerWebhook(
+                                    url = webhookUrl,
+                                    description = "Webhook update omzet Mitra untuk outlet $assignedOutlet",
+                                    secretKey = posApiKey
+                                )
+                            },
+                            enabled = webhookUrl.isNotEmpty() && !isWebhookRegistering,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (webhookRegistered) KulinaGreen else KulinaPurple,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp),
+                            modifier = Modifier
+                                .height(48.dp)
+                                .testTag("register_webhook_button")
+                        ) {
+                            if (isWebhookRegistering) {
+                                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+                            } else {
+                                Icon(
+                                    imageVector = if (webhookRegistered) Icons.Default.Check else Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = if (webhookRegistered) "Registered" else "Daftarkan",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Black
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Sync & Handshake trigger
+                    Button(
+                        onClick = {
+                            viewModel.syncCloudPosOmzet(
+                                outletId = if (assignedOutlet == "Semua") "Kelapa Gading" else assignedOutlet,
+                                secretKey = posApiKey
+                            )
+                        },
+                        enabled = !isPosSyncing,
+                        colors = ButtonDefaults.buttonColors(containerColor = KulinaOrange, contentColor = Color.White),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp)
+                            .testTag("sync_pos_button")
+                    ) {
+                        if (isPosSyncing) {
+                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Tarik & Sync Omset POS Realtime",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Live Webhook Console Output Terminal
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Developer Handshake Console",
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Black,
+                            color = KulinaPurpleDark
+                        )
+                        Text(
+                            text = "Clear Logs",
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Black,
+                            color = KulinaOrange,
+                            modifier = Modifier
+                                .clickable { viewModel.clearPosLogs() }
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Color(0xFF1E1E1E))
+                            .padding(8.dp)
+                    ) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(posSyncLogs.size) { index ->
+                                Text(
+                                    text = posSyncLogs[index],
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    fontSize = 8.5.sp,
+                                    color = Color(0xFF00FF66),
+                                    lineHeight = 11.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
